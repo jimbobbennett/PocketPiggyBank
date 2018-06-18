@@ -1,7 +1,7 @@
-﻿namespace PocketPiggyBank.Services
+namespace PocketPiggyBank.Services
 
-open Microsoft.WindowsAzure.MobileServices;
-open Xamarin.Essentials;
+open Microsoft.WindowsAzure.MobileServices
+open Xamarin.Essentials
 
 type AzureService (authFunc) =
 
@@ -17,16 +17,23 @@ type AzureService (authFunc) =
 
             match userId, authToken with
             | (null, _) | (_, null) | ("", _) | (_, "") -> ()
-            | (_, _) -> let user = new MobileServiceUser(userId)
-                        user.MobileServiceAuthenticationToken <- authToken
-                        client.CurrentUser <- user
+            | (_, _) ->
+                let user = new MobileServiceUser(userId)
+                user.MobileServiceAuthenticationToken <- authToken
+                client.CurrentUser <- user
             ()
         }
 
     let saveClient() =
         async {
-            do! SecureStorage.SetAsync(userIdKey, client.CurrentUser.UserId) |> Async.AwaitTask |> Async.Ignore
-            do! SecureStorage.SetAsync(authTokenKey, client.CurrentUser.MobileServiceAuthenticationToken) |> Async.AwaitTask |> Async.Ignore
+            do! SecureStorage.SetAsync(userIdKey, client.CurrentUser.UserId) |> Async.AwaitTask
+            do! SecureStorage.SetAsync(authTokenKey, client.CurrentUser.MobileServiceAuthenticationToken) |> Async.AwaitTask
+        }
+
+    let removeClient() =
+        async {
+            do! SecureStorage.SetAsync(userIdKey, null) |> Async.AwaitTask
+            do! SecureStorage.SetAsync(authTokenKey, null) |> Async.AwaitTask
         }
 
     let auth() =
@@ -35,15 +42,23 @@ type AzureService (authFunc) =
             if isAuth then do! saveClient()
         }
 
-    member this.IsLoggedIn() =
+    member this.LoggedInUser() =
         async {
             do! loadClient()
-            return client.CurrentUser <> null
+            return client.CurrentUser |> Option.ofObj
         }
 
     member this.LogIn() =
         async {
-            do! loadClient()
-            let! l = this.IsLoggedIn()
-            if (not l) then do! auth()
+            let! l = this.LoggedInUser()
+            match l with
+            | None -> do! auth()
+            | Some _ -> ()
+            return! this.LoggedInUser()
+        }
+
+    member this.LogOut() =
+        async {
+            do! removeClient()
+            client.CurrentUser <- null
         }
