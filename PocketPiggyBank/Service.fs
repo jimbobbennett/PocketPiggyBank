@@ -1,5 +1,6 @@
 namespace PocketPiggyBank.Services
 
+open System
 open Microsoft.WindowsAzure.MobileServices
 open Xamarin.Essentials
 
@@ -15,13 +16,10 @@ type AzureService (authFunc) =
             let! userId = SecureStorage.GetAsync userIdKey |> Async.AwaitTask
             let! authToken = SecureStorage.GetAsync authTokenKey |> Async.AwaitTask
 
-            match userId, authToken with
-            | (null, _) | (_, null) | ("", _) | (_, "") -> ()
-            | (_, _) ->
+            if not (String.IsNullOrWhiteSpace userId) && not (String.IsNullOrWhiteSpace authToken) then
                 let user = new MobileServiceUser(userId)
                 user.MobileServiceAuthenticationToken <- authToken
                 client.CurrentUser <- user
-            ()
         }
 
     let saveClient() =
