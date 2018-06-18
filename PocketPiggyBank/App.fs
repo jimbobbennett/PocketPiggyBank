@@ -7,21 +7,20 @@ open PocketPiggyBank.Services
 open Xamarin.Forms
 
 module App = 
-    open Microsoft.WindowsAzure.MobileServices
 
     type Model =
         {
             Balance : decimal
             CurrencySymbol : string
             AzureService : AzureService
-            User: MobileServiceUser option
+            User: string option
         }
 
     type Msg =
         | Spend of decimal
         | Add of decimal
         | NeedRefresh
-        | Login of MobileServiceUser option
+        | Login of string option
 
     let init azureService () =
         { Balance = 0.0m
@@ -45,8 +44,10 @@ module App =
                 children = [
                     match model.User with
                     | Some user ->
-                        yield Xaml.Label(text = sprintf "Logged in as : %s" user.UserId)
+                        yield Xaml.Label(text = sprintf "Logged in as : %s" user)
                         yield Xaml.Label(text = sprintf "Balance: %s%.2f" model.CurrencySymbol model.Balance)
+                        yield Xaml.Button(text = "Withdraw", command=(fun () -> dispatch (Spend 10.0m)), canExecute=(model.Balance > 0.0m))
+                        yield Xaml.Button(text = "Deposit", command=(fun () -> dispatch (Add 10.0m)))
                         yield Xaml.Button(text = "Logout", command=(fun () -> dispatch (Login None)))
                     | None ->
                         yield Xaml.Label(text = sprintf "Not logged in")
@@ -66,13 +67,13 @@ module App =
 
     let logout model dispatch =
         async {
-            let! userOpt = model.AzureService.LogOut()
+            do! model.AzureService.LogOut()
             dispatch (Login None)
         }
 
     let loginFake model dispatch =
         async {
-            dispatch (Login (Some (MobileServiceUser "me@piggybank.com")))
+            dispatch (Login (Some "me@piggybank.com"))
         }
 
     let createLoginPage model dispatch  = 
@@ -118,6 +119,7 @@ type App(authFunc) as app =
     let azureService = new AzureService(authFunc)
 
     let program = Program.mkProgram (azureService |> App.init) App.update App.view
+
     let runner = 
         program
         |> Program.withConsoleTrace

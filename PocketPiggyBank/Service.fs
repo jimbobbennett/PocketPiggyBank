@@ -36,8 +36,9 @@ type AzureService (authFunc) =
 
     let auth() =
         async {
-            let! isAuth = authFunc client
-            if isAuth then do! saveClient()
+            let! isAuthorized = authFunc client
+            if isAuthorized then
+                do! saveClient()
         }
 
     member this.LoggedInUser() =
@@ -51,8 +52,12 @@ type AzureService (authFunc) =
             let! l = this.LoggedInUser()
             match l with
             | None -> do! auth()
-            | Some _ -> ()
-            return! this.LoggedInUser()
+            | Some user -> ()
+
+            let! l = this.LoggedInUser()
+            match l with
+            | None -> return None
+            | Some user -> return Some user.UserId
         }
 
     member this.LogOut() =
