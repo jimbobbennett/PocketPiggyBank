@@ -1,3 +1,4 @@
 module Constants
 
-    let functionUrl = "https://pocketpiggybank.azurewebsites.net"
+    let functionUrl = <your url here>
+    //"https://pocketpiggybank.azurewebsites.net"
