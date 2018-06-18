@@ -16,28 +16,34 @@ type AzureService (authFunc) =
             let! authToken = SecureStorage.GetAsync authTokenKey |> Async.AwaitTask
 
             match userId, authToken with
-            | (null, _) | (_, null) -> ()
+            | (null, _) | (_, null) | ("", _) | (_, "") -> ()
             | (_, _) -> let user = new MobileServiceUser(userId)
                         user.MobileServiceAuthenticationToken <- authToken
                         client.CurrentUser <- user
             ()
         }
 
+    let saveClient() =
+        async {
+            do! SecureStorage.SetAsync(userIdKey, client.CurrentUser.UserId) |> Async.AwaitTask |> Async.Ignore
+            do! SecureStorage.SetAsync(authTokenKey, client.CurrentUser.MobileServiceAuthenticationToken) |> Async.AwaitTask |> Async.Ignore
+        }
+
     let auth() =
         async {
             let! isAuth = authFunc client
-            match isAuth with
-            | true -> do! SecureStorage.SetAsync(userIdKey, client.CurrentUser.UserId) |> Async.AwaitTask |> Async.Ignore
-                      do! SecureStorage.SetAsync(authTokenKey, client.CurrentUser.MobileServiceAuthenticationToken) |> Async.AwaitTask |> Async.Ignore
-                      return true
-            | false -> return false
+            if isAuth then do! saveClient()
         }
 
     member this.IsLoggedIn() =
-        client.CurrentUser <> null
+        async {
+            do! loadClient()
+            return client.CurrentUser <> null
+        }
 
     member this.LogIn() =
-        loadClient() |> Async.RunSynchronously
-        match this.IsLoggedIn() with
-        | true -> true
-        | false -> auth() |> Async.RunSynchronously
+        async {
+            do! loadClient()
+            let! l = this.IsLoggedIn()
+            if (not l) then do! auth()
+        }

@@ -2,5 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" android:versionCode="1" android:versionName="1.0" package="io.jimbobbennett.PocketPiggyBank">
     <uses-sdk android:minSdkVersion="15" />
     <application android:label="PocketPiggyBank">
+        <activity android:name="com.microsoft.windowsazure.mobileservices.authentication.RedirectUrlActivity" android:launchMode="singleTop" android:noHistory="true">
+          <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="happyxamdevs" android:host="easyauth.callback" />
+          </intent-filter>
+        </activity>
     </application>
 </manifest>
