@@ -40,7 +40,7 @@ module App =
             title="Pocket Piggy Bank",
             content=Xaml.StackLayout(padding=20.0,
                 horizontalOptions=LayoutOptions.Center,
-                verticalOptions=LayoutOptions.Center,
+                verticalOptions=LayoutOptions.CenterAndExpand,
                 children = [
                     match model.User with
                     | Some user ->
@@ -78,7 +78,7 @@ module App =
 
     let createLoginPage model dispatch  = 
         Xaml.ContentPage(
-            content=Xaml.Grid(
+            Xaml.Grid(
                 padding = 20.0,
                 rowdefs = [
                     box "*"
@@ -87,13 +87,13 @@ module App =
                     box "*"
                 ],
                 children = [
-                    Xaml.Button(text = "Log in with Facebook",
+                    Xaml.Button(text = "Login with Facebook",
                                 backgroundColor = Color.Orange,
                                 textColor = Color.White,
                                 fontSize = Device.GetNamedSize(NamedSize.Large, typeof<Button>),
                                 command = (fun () -> login model dispatch |> Async.StartImmediate))
                         .GridRow(1)
-                    Xaml.Button(text = "Log in as Test User",
+                    Xaml.Button(text = "Login as Test User",
                                 backgroundColor = Color.DarkGray,
                                 textColor = Color.White,
                                 fontSize = Device.GetNamedSize(NamedSize.Large, typeof<Button>),
@@ -101,7 +101,7 @@ module App =
                         .GridRow(2)
                 ]
             )
-        )
+        ).HasNavigationBar(false).HasBackButton(false)
 
     let view (model : Model) dispatch =
         Xaml.NavigationPage(
