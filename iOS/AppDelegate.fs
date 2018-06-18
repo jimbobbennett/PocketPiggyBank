@@ -24,7 +24,7 @@ type AppDelegate () =
         client <- c
         async {
             try
-                let! user = c.LoginAsync(vc, MobileServiceAuthenticationProvider.Facebook, "PocketPiggeyBank") |> Async.AwaitTask
+                let! user = c.LoginAsync(vc, MobileServiceAuthenticationProvider.Facebook, "pocketpiggybank") |> Async.AwaitTask
                 return user <> null
             with error -> System.Diagnostics.Debug.WriteLine error.Message
                           return false

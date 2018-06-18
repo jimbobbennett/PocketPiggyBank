@@ -19,7 +19,7 @@ type MainActivity() as this =
 
     let auth (client : MobileServiceClient) = 
         async {
-            let! user = client.LoginAsync(this, MobileServiceAuthenticationProvider.Facebook, "PocketPiggeyBank") |> Async.AwaitTask
+            let! user = client.LoginAsync(this, MobileServiceAuthenticationProvider.Facebook, "pocketpiggybank") |> Async.AwaitTask
             return user <> null
         }
 
