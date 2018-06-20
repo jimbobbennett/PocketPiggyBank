@@ -113,23 +113,13 @@ module App =
         Xaml.Grid(
             backgroundColor = Color.FromHex "#50000000",
             padding = 40.,
-            rowdefs = [
-                box "*"
-                box "*"
-                box "*"
-            ],
+            rowdefs = [box "*"; box "*"; box "*"],
             children = [
                 Xaml.Frame(
                     content = Xaml.Grid(
                         columnSpacing = 20.,
-                        rowdefs = [
-                            box "*"
-                            box "*"
-                        ],
-                        coldefs = [
-                            box "*"
-                            box "*"
-                        ],
+                        rowdefs = [box "*"; box "*"],
+                        coldefs = [box "*"; box "*"],
                         children = [
                             Xaml.Entry(
                                 placeholder = "Enter the amount",
@@ -166,15 +156,7 @@ module App =
                         children = [
                             yield Xaml.Grid(
                                 padding = 20.0,
-                                rowdefs = [
-                                    box "*"
-                                    box "auto"
-                                    box "*"
-                                    box "auto"
-                                    box "*"
-                                    box "auto"
-                                    box "*"
-                                 ],
+                                rowdefs = [box "*"; box "auto"; box "*"; box "auto"; box "*"; box "auto"; box "*"],
                                 children = [
                                     Xaml.Image(
                                         source = "Pig",
@@ -223,12 +205,7 @@ module App =
         Xaml.ContentPage(
             content = Xaml.Grid(
                 padding = 20.0,
-                rowdefs = [
-                            box "*"
-                            box "auto"
-                            box "auto"
-                            box "*"
-                         ],
+                rowdefs = [box "*"; box "auto"; box "auto"; box "*"],
                 children = [
                             Xaml.Button(
                                         text = "Log in with Facebook",

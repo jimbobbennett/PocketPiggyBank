@@ -131,7 +131,7 @@
       <HintPath>..\packages\Xamarin.Forms.3.0.0.561731\lib\Xamarin.iOS10\Xamarin.Forms.Xaml.dll</HintPath>
     </Reference>
     <Reference Include="Elmish.XamarinForms">
-      <HintPath>..\packages\Elmish.XamarinForms.0.6.0\lib\netstandard2.0\Elmish.XamarinForms.dll</HintPath>
+      <HintPath>..\packages\Elmish.XamarinForms.0.7.0\lib\netstandard2.0\Elmish.XamarinForms.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

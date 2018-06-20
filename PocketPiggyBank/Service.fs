@@ -9,10 +9,7 @@ open Xamarin.Essentials
 
 type OnlineBalance = { TotalBalance : float }
 
-type IncomingTransaction = {
-    Amount : float
-    Description : string
-}
+type IncomingTransaction = { Amount : float; Description : string }
 
 type AzureService (authFunc) =
 
@@ -82,9 +79,6 @@ type AzureService (authFunc) =
 
     member this.AdjustBalance amount =
         async {
-            let balanceAdjust = JToken.FromObject({Amount = amount; Description = ""})
-            do! client.InvokeApiAsync(balanceApi, balanceAdjust) |> Async.AwaitTask |> Async.Ignore
-
-            let! result = this.GetLatestBalance()
-            return result
+            do! client.InvokeApiAsync(balanceApi, JToken.FromObject({Amount = amount; Description = ""})) |> Async.AwaitTask |> Async.Ignore
+            return! this.GetLatestBalance()
         }
