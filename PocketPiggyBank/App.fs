@@ -3,82 +3,255 @@
 open System.Globalization
 open Elmish.XamarinForms
 open Elmish.XamarinForms.DynamicViews
+open Microsoft.WindowsAzure.MobileServices
+open Newtonsoft.Json
 open PocketPiggyBank.Services
 open Xamarin.Forms
 
-module App = 
+module App =
+    type UIMode = Display | MoneyIn | MoneyOut
+
+    type IntermediateState =
+        | None
+        | AdjustingBalance of float
+     
     type Model =
         {
-            Balance : decimal
+            Balance : float
             CurrencySymbol : string
+            UIMode : UIMode
+
+            [<JsonIgnore>]
+            IntermediateState : IntermediateState
+
+            [<JsonIgnore>]
             AzureService : AzureService
+
+            [<JsonIgnore>]
+            IsBusy : bool
         }
         with 
-            member this.IsLoggedIn() = 
-                this.AzureService.IsLoggedIn()
+            member this.IsLoggedIn() = this.AzureService.IsLoggedIn()
+            member this.LogIn (p : MobileServiceAuthenticationProvider) = this.AzureService.LogIn p
+            member this.LogOut() = this.AzureService.LogOut()
+            member this.GetLatestBalance() = this.AzureService.GetLatestBalance()
+            member this.AdjustBalance amount = this.AzureService.AdjustBalance amount
 
     type Msg =
-        | Spend of decimal
-        | Add of decimal
-        | NeedRefresh
-        | Login
+        | RefreshedBalance of float
+        | ChangeMode of UIMode
+        | ChangeBusy of bool
+        | UpdateIntermediateState of IntermediateState
+        | None
 
-    let init azureService =
-         fun () -> { Balance = 0.0m; CurrencySymbol = NumberFormatInfo.CurrentInfo.CurrencySymbol; AzureService = azureService }, Cmd.none
+    let init azureService () =
+        let model = { 
+            Balance = 0.; 
+            CurrencySymbol = NumberFormatInfo.CurrentInfo.CurrencySymbol; 
+            AzureService = azureService;
+            UIMode = Display;
+            IntermediateState = IntermediateState.None;
+            IsBusy = true;
+        }
+
+        let onInit = async {
+                         let! l = azureService.IsLoggedIn()
+                         match l with
+                         | true -> let! b = azureService.GetLatestBalance()
+                                   return (RefreshedBalance(b))
+                         | false -> return (ChangeBusy(false))
+                     } |> Cmd.ofAsyncMsg 
+        model, onInit
 
     let update msg model =
         match msg with
-        | Spend x -> {model with Balance = model.Balance - x}, Cmd.none
-        | Add x -> {model with Balance = model.Balance + x}, Cmd.none
-        | NeedRefresh -> model, Cmd.none
-        | Login -> model, Cmd.none
+        | RefreshedBalance x -> {model with Balance = x; IsBusy = false}, Cmd.none
+        | ChangeMode x -> {model with UIMode = x}, Cmd.none
+        | ChangeBusy b -> {model with IsBusy = b}, Cmd.none
+        | UpdateIntermediateState x -> {model with IntermediateState = x}, Cmd.none
+        | None -> model, Cmd.none
 
-    let createMainPage model =
-        Xaml.NavigationPage(
-                    pages = [
-                        Xaml.ContentPage(
-                            title="Pocket Piggy Bank",
-                            content=Xaml.StackLayout(padding=20.0,
-                                horizontalOptions=LayoutOptions.Center,
-                                verticalOptions=LayoutOptions.Center,
-                                children = [
-                                    Xaml.Label(text = sprintf "%s%.2f" model.CurrencySymbol model.Balance)
-                                ])
-                        ).BarBackgroundColor(Color.Orange)
-                         .BarTextColor(Color.White)
-                    ])
-
-    let login model =
+    let adjustBalance (model : Model) dispatch =
         async {
-            do! model.AzureService.LogIn()
-            dispatch Login
+            match model.IntermediateState with
+            | AdjustingBalance x -> dispatch (ChangeBusy(true))
+                                    let! newBalance = model.AdjustBalance x
+                                    do! Async.Sleep(5000)
+                                    dispatch (UpdateIntermediateState(IntermediateState.None))
+                                    dispatch (RefreshedBalance(newBalance))
+                                    dispatch (ChangeMode(UIMode.Display))
+            | _ -> dispatch None
+         }
+
+    let refreshBalance (model : Model) dispatch =
+        async {
+             let! l = model.IsLoggedIn()
+             if l then
+                 let! b = model.GetLatestBalance()
+                 dispatch (RefreshedBalance(b)) 
+         }
+
+    let login (model : Model) dispatch p =
+        async {
+            do! model.LogIn p
+            do! refreshBalance model dispatch
         }
 
-    let createLoginPage model = 
-        Xaml.ContentPage(
-                content=Xaml.Grid(
-                            padding = 20.0,
-                            rowdefs = [
-                                        box "*"
-                                        box "auto"
-                                        box "*"
-                                     ],
-                            children = [
-                                        Xaml.Button(
-                                                    text = "Log in with Facebook",
-                                                    backgroundColor = Color.Orange,
-                                                    textColor = Color.White,
-                                                    fontSize = Device.GetNamedSize(NamedSize.Large, typeof<Button>),
-                                                    command = (fun () -> login model |> Async.StartImmediate)
-                                                   ).GridRow(1)
-                                       ]
-                            )
+    let createBusyLayer () =
+        Xaml.Grid(
+            backgroundColor = Color.FromHex "#A0000000",
+            children = [
+                Xaml.ActivityIndicator(
+                    isRunning = true,
+                    color = Color.White,
+                    scale = 2.
                 )
+            ]
+        )
+
+    let createMoneyInOutView model dispatch n =
+        Xaml.Grid(
+            backgroundColor = Color.FromHex "#50000000",
+            padding = 40.,
+            rowdefs = [
+                box "*"
+                box "*"
+                box "*"
+            ],
+            children = [
+                Xaml.Frame(
+                    content = Xaml.Grid(
+                        columnSpacing = 20.,
+                        rowdefs = [
+                            box "*"
+                            box "*"
+                        ],
+                        coldefs = [
+                            box "*"
+                            box "*"
+                        ],
+                        children = [
+                            Xaml.Entry(
+                                placeholder = "Enter the amount",
+                                fontSize = 24.,
+                                textChanged = (fun args -> dispatch (UpdateIntermediateState(AdjustingBalance((float args.NewTextValue) * n))))
+                            ).GridColumnSpan(2).GridRow(0)
+                            Xaml.Button(
+                                text = (if model.UIMode = MoneyIn then "Add" else "Remove"),
+                                backgroundColor = (if model.UIMode = MoneyIn then Color.Green else Color.Red),
+                                textColor = Color.White,
+                                fontSize = 24.,
+                                command = (fun () -> adjustBalance model dispatch |> Async.StartImmediate)
+                            ).GridColumn(0).GridRow(1)
+                            Xaml.Button(
+                                text = "Cancel",
+                                backgroundColor = Color.DarkGray,
+                                textColor = Color.White,
+                                fontSize = 24.,
+                                command = (fun () -> dispatch (UpdateIntermediateState(IntermediateState.None))
+                                                     dispatch (ChangeMode(UIMode.Display)))
+                            ).GridColumn(1).GridRow(1)
+                        ]
+                    )
+                ).GridRow(1)
+            ]
+        )
+
+    let createMainPage  model dispatch =
+        Xaml.NavigationPage(
+            pages = [
+                Xaml.ContentPage(
+                    title="Pocket Piggy Bank",
+                    content=Xaml.Grid(
+                        children = [
+                            yield Xaml.Grid(
+                                padding = 20.0,
+                                rowdefs = [
+                                    box "*"
+                                    box "auto"
+                                    box "*"
+                                    box "auto"
+                                    box "*"
+                                    box "auto"
+                                    box "*"
+                                 ],
+                                children = [
+                                    Xaml.Image(
+                                        source = "Pig",
+                                        horizontalOptions = LayoutOptions.Center,
+                                        verticalOptions = LayoutOptions.Center,
+                                        aspect = Aspect.AspectFit,
+                                        margin = Thickness(0.,0.,0.,20.)
+                                    ).GridRow(3)
+                                    Xaml.Label(
+                                        text = sprintf "%s%.2f" model.CurrencySymbol model.Balance,
+                                        horizontalOptions = LayoutOptions.Center,
+                                        verticalOptions = LayoutOptions.Center,
+                                        fontSize = 48.
+                                    ).GridRow(3)
+                                    Xaml.Button(
+                                        text = "Put money in",
+                                        fontAttributes = FontAttributes.Bold,
+                                        backgroundColor = Color.FromHex "#F806D2",
+                                        textColor = Color.White,
+                                        fontSize = 24.,
+                                        command = (fun () -> dispatch (ChangeMode(MoneyIn)))
+                                    ).GridRow(1)
+                                    Xaml.Button(
+                                        text = "Take money out",
+                                        fontAttributes = FontAttributes.Bold,
+                                        backgroundColor = Color.FromHex "#F806D2",
+                                        textColor = Color.White,
+                                        fontSize = 24.,
+                                        command = (fun () -> dispatch (ChangeMode(MoneyOut)))
+                                    ).GridRow(5)
+                                ])
+                            if model.UIMode = MoneyIn then
+                                yield createMoneyInOutView model dispatch 1.
+                            elif model.UIMode = MoneyOut then
+                                yield createMoneyInOutView model dispatch -1.
+
+                            if model.IsBusy then
+                                yield createBusyLayer()
+                        ]
+                    )
+                ).BarBackgroundColor(Color.Orange)
+                 .BarTextColor(Color.White)
+            ])
+
+    let createLoginPage model dispatch = 
+        Xaml.ContentPage(
+            content = Xaml.Grid(
+                padding = 20.0,
+                rowdefs = [
+                            box "*"
+                            box "auto"
+                            box "auto"
+                            box "*"
+                         ],
+                children = [
+                            Xaml.Button(
+                                        text = "Log in with Facebook",
+                                        backgroundColor = Color.Orange,
+                                        textColor = Color.White,
+                                        fontSize = Device.GetNamedSize(NamedSize.Large, typeof<Button>),
+                                        command = (fun () -> login model dispatch MobileServiceAuthenticationProvider.Facebook |> Async.StartImmediate)
+                                       ).GridRow(1)
+                            Xaml.Button(
+                                        text = "Log in with Twitter",
+                                        backgroundColor = Color.Blue,
+                                        textColor = Color.White,
+                                        fontSize = Device.GetNamedSize(NamedSize.Large, typeof<Button>),
+                                        command = (fun () -> login model dispatch MobileServiceAuthenticationProvider.Twitter |> Async.StartImmediate)
+                                       ).GridRow(2)
+                           ]
+            )
+        )
 
     let view (model : Model) dispatch =
         match model.IsLoggedIn() |> Async.RunSynchronously with
-        | true -> createMainPage model
-        | false -> createLoginPage model
+        | true -> createMainPage model dispatch
+        | false -> createLoginPage model dispatch
 
 type App(authFunc) as app =
     inherit Application()
@@ -91,3 +264,4 @@ type App(authFunc) as app =
         |> Program.withConsoleTrace
         |> Program.withDynamicView app
         |> Program.run
+

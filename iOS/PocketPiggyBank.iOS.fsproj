@@ -88,9 +88,6 @@
     <Reference Include="System.Numerics" />
     <Reference Include="mscorlib" />
     <Reference Include="Xamarin.iOS" />
-    <Reference Include="Elmish.XamarinForms">
-      <HintPath>..\packages\Elmish.XamarinForms.0.5.1\lib\netstandard2.0\Elmish.XamarinForms.dll</HintPath>
-    </Reference>
     <Reference Include="Xamarin.Essentials">
       <HintPath>..\packages\Xamarin.Essentials.0.7.0.17-preview\lib\xamarinios10\Xamarin.Essentials.dll</HintPath>
     </Reference>
@@ -133,19 +130,29 @@
     <Reference Include="Xamarin.Forms.Xaml">
       <HintPath>..\packages\Xamarin.Forms.3.0.0.561731\lib\Xamarin.iOS10\Xamarin.Forms.Xaml.dll</HintPath>
     </Reference>
+    <Reference Include="Elmish.XamarinForms">
+      <HintPath>..\packages\Elmish.XamarinForms.0.6.0\lib\netstandard2.0\Elmish.XamarinForms.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Assets.xcassets\Pig.imageset\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ImageAsset Include="Assets.xcassets\Pig.imageset\Pig%403x.png" />
+    <ImageAsset Include="Assets.xcassets\Pig.imageset\Contents.json" />
+    <ImageAsset Include="Assets.xcassets\Pig.imageset\Pig.png" />
+    <ImageAsset Include="Assets.xcassets\Pig.imageset\Pig%402x.png" />
     <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\Contents.json" />
     <ImageAsset Include="Assets.xcassets\Contents.json" />
     <InterfaceDefinition Include="LaunchScreen.storyboard" />
     <None Include="Info.plist" />
     <None Include="Entitlements.plist" />
     <Compile Include="AppDelegate.fs" />
+    <None Include="packages.config" />
     <ProjectReference Include="../PocketPiggyBank/PocketPiggyBank.fsproj">
       <Project>{5D88BB58-005C-4639-BB84-A2B6701F7C56}</Project>
       <Name>PocketPiggyBank</Name>
     </ProjectReference>
-    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.FSharp.targets" />
   <Import Project="..\packages\Xamarin.Forms.3.0.0.561731\build\netstandard2.0\Xamarin.Forms.targets" Condition="Exists('..\packages\Xamarin.Forms.3.0.0.561731\build\netstandard2.0\Xamarin.Forms.targets')" />

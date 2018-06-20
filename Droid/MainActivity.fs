@@ -17,9 +17,9 @@ type Resources = PocketPiggyBank.Droid.Resource
 type MainActivity() as this =
     inherit FormsAppCompatActivity()
 
-    let auth (client : MobileServiceClient) = 
+    let auth (client : MobileServiceClient) (p : MobileServiceAuthenticationProvider) = 
         async {
-            let! user = client.LoginAsync(this, MobileServiceAuthenticationProvider.Facebook, "pocketpiggybank") |> Async.AwaitTask
+            let! user = client.LoginAsync(this, p, "pocketpiggybank") |> Async.AwaitTask
             return user <> null
         }
 

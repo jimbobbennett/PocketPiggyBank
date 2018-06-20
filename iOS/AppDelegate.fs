@@ -20,11 +20,11 @@ type AppDelegate () =
         | null -> vc
         | _ -> getTopmostViewController next
 
-    let auth (c : MobileServiceClient) = 
+    let auth (c : MobileServiceClient) (p : MobileServiceAuthenticationProvider) = 
         client <- c
         async {
             try
-                let! user = c.LoginAsync(vc, MobileServiceAuthenticationProvider.Facebook, "pocketpiggybank") |> Async.AwaitTask
+                let! user = c.LoginAsync(vc, p, "pocketpiggybank") |> Async.AwaitTask
                 return user <> null
             with error -> System.Diagnostics.Debug.WriteLine error.Message
                           return false
