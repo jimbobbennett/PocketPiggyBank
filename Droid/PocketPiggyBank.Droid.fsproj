@@ -171,8 +171,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <AndroidResource Include="Resources\drawable-xxhdpi\Pig.png" />
-    <AndroidResource Include="Resources\drawable-xxhdpi\icon.png" />
     <Compile Include="MainActivity.fs" />
     <None Include="Resources\AboutResources.txt" />
     <AndroidResource Include="Resources\layout\Tabbar.axml" />
@@ -183,6 +181,8 @@
     <AndroidResource Include="Resources\drawable-hdpi\Pig.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\icon.png" />
     <AndroidResource Include="Resources\drawable-xhdpi\Pig.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\Pig.png" />
+    <AndroidResource Include="Resources\drawable-xxhdpi\icon.png" />
     <Compile Include="Properties\AssemblyInfo.fs" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="Assets\AboutAssets.txt" />
